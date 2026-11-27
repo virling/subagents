@@ -44,9 +44,10 @@ export function summarizeAgent(id, entries, input) {
     if (e.timestamp) {
       times.push(e.timestamp);
       const t = Date.parse(e.timestamp);
-      // A new prompt after a pause is a later continuation, so the gap before it is idle time.
+      // A new prompt after a pause is a later continuation, and a tool call a person approved waited on them, so both gaps are idle time.
       const prompt = role === "user" && text(content).trim() && !blocks(content).some((c) => c.type === "tool_result");
-      if (prev !== null && !prompt) active += t - prev;
+      const approved = role === "user" && e.permissionDecision?.source?.startsWith("user");
+      if (prev !== null && !prompt && !approved) active += t - prev;
       prev = t;
     }
     if (role === "user" && !first) first = text(content).trim();

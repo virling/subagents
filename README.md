@@ -61,7 +61,7 @@ Total: 3 subagents, 14m 57s, 56 tool calls, 1.4M tokens
 
 Each subagent transcript lives at `~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl`. The description comes from the `Agent` (or older `Task`) tool call in the main session, or else the subagent's first message.
 
-- **Time**: active time in the subagent transcript. When a subagent is continued later with a follow-up message, the idle gap before that message is not counted. Time spent waiting on a tool, such as a long Bash command, still counts.
+- **Time**: active time in the subagent transcript. When a subagent is continued later with a follow-up message, the idle gap before that message is not counted. Time spent waiting for a person to approve a tool call is not counted either. A long-running tool, such as a slow Bash command, still counts.
 - **Tool calls**: every `tool_use`, grouped by tool name. **Failed** counts `tool_result` entries with `is_error`.
 - **Read / edited**: file paths from `Read`, and from `Edit`, `Write`, `MultiEdit` and `NotebookEdit`.
 - **Report**: characters of the subagent's last text after its last tool call.

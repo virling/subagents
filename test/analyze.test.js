@@ -39,6 +39,18 @@ test("summarizeAgent leaves out the idle gap before a follow-up message", () => 
   assert.equal(a.durationMs, 7 * 60000);
 });
 
+test("summarizeAgent leaves out time spent waiting for a person to approve a tool call", () => {
+  const a = summarizeAgent("x3", [
+    say(0, "user", "go"),
+    use(1, "t1", "Bash", { command: "npm test" }),
+    result(9, "t1", false, { permissionDecision: { decision: "accept", source: "config" } }),
+    use(10, "t2", "Bash", { command: "ls" }),
+    result(40, "t2", false, { permissionDecision: { decision: "accept", source: "user_temporary" } }),
+    say(41, "assistant", "Done."),
+  ]);
+  assert.equal(a.durationMs, 11 * 60000);
+});
+
 test("text before a tool call is not the final report, and no usage means no tokens", () => {
   const a = summarizeAgent("x", [say(0, "user", "go"), say(1, "assistant", "x".repeat(300)), use(2, "t", "Bash", { command: "ls" })]);
   assert.equal(a.reportChars, 0);
