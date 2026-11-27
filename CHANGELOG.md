@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- Time no longer includes waiting for a person to approve a tool call, which could inflate a subagent from minutes to hours.
+
 ## [0.1.0] - 2026-11-27
 
 ### Added
