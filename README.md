@@ -77,6 +77,13 @@ Each subagent transcript lives at `~/.claude/projects/<project>/<session>/subage
 
 Flags are hints, not verdicts: two subagents reading the same file is often fine.
 
+## More tools from Virling
+
+- [agentmem](https://github.com/virling/agentmem): project memory for AI coding agents, shared across Claude Code, Cursor, Codex and other MCP clients.
+- [ccdoctor](https://github.com/virling/ccdoctor): checks your Claude Code setup: hooks, MCP servers and plugins that are registered but not working.
+- [ciwhy](https://github.com/virling/ciwhy): finds the real error in a failed GitHub Actions run and tells you if it is flaky.
+- [npmship](https://github.com/virling/npmship): releases an npm package and verifies it landed on npm, in CI and on GitHub.
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE)
