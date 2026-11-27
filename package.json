@@ -1,6 +1,6 @@
 {
   "name": "@virling/subagents",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Review what Claude Code subagents did in a session and flag repeated or wasted work",
   "type": "module",
   "bin": {
