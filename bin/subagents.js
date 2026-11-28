@@ -50,9 +50,8 @@ function main() {
   const report = analyze(session);
   if (flags.json) return console.log(JSON.stringify({ session: session.id, file, ...report }, null, 2));
   if (!report.agents.length) return console.log(`Session ${session.id} has no subagents.`);
-  const cwd = session.main.find((e) => e.cwd)?.cwd;
   console.log(`Session ${session.id}\n`);
-  console.log(formatReport(report, cwd));
+  console.log(formatReport(report, report.cwd));
 }
 
 main();

@@ -4,8 +4,8 @@ import path from "node:path";
 
 const AGENT_TOOLS = ["Agent", "Task"];
 const EDIT_TOOLS = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
-export const EMPTY_REPORT_CHARS = 200;
-export const ERROR_RATE = 0.3;
+const EMPTY_REPORT_CHARS = 200;
+const ERROR_RATE = 0.3;
 
 const text = (content) =>
   typeof content === "string" ? content : (content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n");
@@ -14,7 +14,7 @@ const turns = (entries) => entries.filter((e) => (e.type === "user" || e.type ==
 const fileOf = (input) => input?.file_path || input?.notebook_path;
 export const normalizeCommand = (cmd) => cmd.trim().replace(/\s+/g, " ");
 export const mask = (cmd) => cmd.replace(/\b(Authorization:\s*(?:(?:Bearer|Basic|token)\s+)?|Bearer\s+)[^\s"'\\]+/gi, "$1***").replace(/(^|[\s;&|(])([A-Za-z_]\w*)=("[^"]*"|'[^']*'|[^\s;&|]+)/g, "$1$2=***");
-const truncate = (s, n = 80) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
+export const truncate = (s, n = 80) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
 
 export function launches(main) {
   const inputs = new Map();
@@ -224,10 +224,12 @@ export function analyze({ main, agents }) {
     .sort((a, b) => (a.start || "").localeCompare(b.start || ""))
     .map((a, i) => ({ n: i + 1, ...a }));
   const known = summaries.filter((a) => a.tokens);
+  const cwd = main.find((e) => e.cwd)?.cwd;
   return {
+    cwd,
     agents: summaries,
     flags: findFlags(summaries, reads),
-    approvals: approvalSummary(summaries, main.find((e) => e.cwd) && repoRoot(main.find((e) => e.cwd).cwd)),
+    approvals: approvalSummary(summaries, cwd && repoRoot(cwd)),
     totals: {
       subagents: summaries.length,
       durationMs: summaries.reduce((s, a) => s + a.durationMs, 0),

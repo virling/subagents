@@ -1,4 +1,5 @@
 import path from "node:path";
+import { truncate } from "./analyze.js";
 
 export function duration(ms) {
   const s = Math.round(ms / 1000);
@@ -12,8 +13,6 @@ export function count(n) {
   if (n < 1e6) return `${(n / 1000).toFixed(1)}k`;
   return `${(n / 1e6).toFixed(1)}M`;
 }
-
-const truncate = (s, n = 70) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
 
 const time = (iso) => (iso ? new Date(iso).toLocaleString("sv").slice(5, 16) : "?");
 
@@ -39,7 +38,7 @@ export function formatReport(report, cwd = "") {
   if (ap?.count) {
     lines.push("", "Approvals");
     lines.push(`   ${ap.count} tool calls waited ${duration(ap.waitMs)} for you to approve them`);
-    for (const r of ap.reasons) lines.push(`   ${r.reason}  ${r.count}  ${duration(r.waitMs)}  e.g. ${truncate(r.example.replace(/\s+/g, " "))}`);
+    for (const r of ap.reasons) lines.push(`   ${r.reason}  ${r.count}  ${duration(r.waitMs)}  e.g. ${truncate(r.example.replace(/\s+/g, " "), 70)}`);
     if (ap.folders.length) lines.push(`   folders outside the project (add to permissions.additionalDirectories or run /add-dir): ${ap.folders.slice(0, 5).map((f) => `${f.dir} (${f.count})`).join(", ")}`);
     if (ap.rules.length) lines.push(`   no allow rule matched, candidates for permissions.allow: ${ap.rules.slice(0, 5).map((r) => `${r.rule} (${r.count})`).join(", ")}`);
   }
