@@ -76,3 +76,12 @@ test("cli rejects unknown flags and missing values with usage and exit code 2", 
     assert.equal(r.stdout, "");
   }
 });
+
+test("cli exits 1 on a missing session or a folder instead of a file", () => {
+  const { config, project, dir } = fixture();
+  for (const args of [["--project", project, "--session", "nope"], [dir]]) {
+    const r = spawnSync("node", [bin, ...args], { encoding: "utf8", env: { ...process.env, CLAUDE_CONFIG_DIR: config } });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /No such session/);
+  }
+});

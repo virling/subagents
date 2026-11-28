@@ -41,7 +41,7 @@ function main() {
   let file = positional[0] && path.resolve(positional[0]);
   if (!file && flags.session) file = path.join(dir, `${flags.session}.jsonl`);
   if (!file) file = sessions.find((s) => s.subagents)?.file;
-  if (!file || !fs.existsSync(file)) {
+  if (!file || !fs.statSync(file, { throwIfNoEntry: false })?.isFile()) {
     console.error(file ? `No such session: ${file}` : `No session with subagents in ${dir}`);
     process.exitCode = 1;
     return;
