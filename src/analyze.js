@@ -86,6 +86,10 @@ export function summarizeAgent(id, entries, input) {
       if (role !== "assistant") continue;
       if (c.type === "text") report += `${c.text}\n`;
       if (c.type !== "tool_use") continue;
+      if (c.name === "SubagentHandback") {
+        report = `${c.input?.message || ""}\n`;
+        continue;
+      }
       uses.set(c.id, c);
       report = "";
       calls++;

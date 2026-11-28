@@ -81,6 +81,14 @@ test("text before a tool call is not the final report, and no usage means no tok
   assert.equal(a.tokens, null);
 });
 
+test("a SubagentHandback call is the final report, not a tool call", () => {
+  const msg = "Report. ".repeat(40);
+  const a = summarizeAgent("x", [say(0, "user", "go"), use(1, "t", "Bash", { command: "ls" }), result(2, "t"), use(3, "h", "SubagentHandback", { message: msg })]);
+  assert.equal(a.reportChars, msg.trim().length);
+  assert.equal(a.toolCalls, 1);
+  assert.deepEqual(a.tools, { Bash: 1 });
+});
+
 test("launches maps agent ids to the agent tool input and collects main reads", () => {
   const main = [
     use(0, "a1", "Agent", { description: "Audit the routes", prompt: "long prompt" }),
