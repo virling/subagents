@@ -44,7 +44,7 @@ export function cost(u, model) {
   if (!p) return null;
   const write1h = u.cache_creation?.ephemeral_1h_input_tokens || 0;
   const write5m = (u.cache_creation_input_tokens || 0) - write1h;
-  return ((u.input_tokens || 0) * p[0] + (u.output_tokens || 0) * p[1] + (u.cache_read_input_tokens || 0) * p[2] + write5m * p[0] * 1.25 + write1h * p[0] * 2) / 1e6;
+  return ((u.input_tokens || 0) * p[0] + (u.output_tokens || 0) * p[1] + (u.cache_read_input_tokens || 0) * p[2] + write5m * p[0] * 1.25 + write1h * p[0] * 2) / 1e6 * (u.speed === "fast" ? 2 : 1);
 }
 
 export function summarizeAgent(id, entries, input) {

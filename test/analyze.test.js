@@ -143,11 +143,12 @@ test("normalizeCommand collapses whitespace", () => {
   assert.equal(normalizeCommand("  git   status\n"), "git status");
 });
 
-test("cost uses per-model prices and charges 1h cache writes at 2x", () => {
+test("cost uses per-model prices and charges 1h cache writes and fast mode at 2x", () => {
   const u = { input_tokens: 1e6, output_tokens: 1e6, cache_read_input_tokens: 1e6, cache_creation_input_tokens: 2e6, cache_creation: { ephemeral_1h_input_tokens: 1e6 } };
   assert.equal(cost(u, "claude-opus-5-5"), 4 + 20 + 0.2 + 5 + 8);
   assert.equal(cost({ cache_creation_input_tokens: 1e6 }, "claude-sonnet-5-5"), 2.5);
   assert.equal(cost(u, "some-other-model"), null);
+  assert.equal(cost({ output_tokens: 1e6, speed: "fast" }, "claude-opus-5-5"), 40);
 });
 
 test("cost strips a context suffix from the model id and ignores empty synthetic usage", () => {
