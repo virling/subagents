@@ -26,7 +26,7 @@ export function formatReport(report, cwd = "") {
       .map(([name, n]) => `${name} ${n}`)
       .join(", ");
     lines.push(`#${a.n} ${a.id}  ${a.description || "(no description)"}`);
-    lines.push(`   ${time(a.start)} -> ${time(a.end)}  ${duration(a.durationMs)}  report ${count(a.reportChars)} chars${a.tokens ? `  tokens ${count(a.tokens.total)}` : ""}${a.waitMs ? `  waited ${duration(a.waitMs)} for approval` : ""}`);
+    lines.push(`   ${time(a.start)} -> ${time(a.end)}  ${duration(a.durationMs)}  report ${count(a.reportChars)} chars${a.tokens ? `  tokens ${count(a.tokens.total)}` : ""}${a.costUsd === null ? "" : `  ~$${a.costUsd.toFixed(2)}`}${a.waitMs ? `  waited ${duration(a.waitMs)} for approval` : ""}`);
     lines.push(`   tools  ${a.toolCalls}${tools ? ` (${tools})` : ""}${a.failed ? `  failed ${a.failed}` : ""}`);
     if (a.read.length) lines.push(`   read   ${a.read.map(rel).join(", ")}`);
     if (a.edited.length) lines.push(`   edited ${a.edited.map(rel).join(", ")}`);
@@ -46,7 +46,7 @@ export function formatReport(report, cwd = "") {
   const t = report.totals;
   lines.push("");
   lines.push(
-    `Total: ${t.subagents} subagents, ${duration(t.durationMs)}, ${t.toolCalls} tool calls${t.tokens === null ? "" : `, ${count(t.tokens)} tokens`}`
+    `Total: ${t.subagents} subagents, ${duration(t.durationMs)}, ${t.toolCalls} tool calls${t.tokens === null ? "" : `, ${count(t.tokens)} tokens`}${t.costUsd == null ? "" : `, ~$${t.costUsd.toFixed(2)} at API prices`}`
   );
   return lines.join("\n");
 }

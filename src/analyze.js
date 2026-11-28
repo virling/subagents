@@ -30,6 +30,22 @@ export function launches(main) {
   return { byAgent, reads };
 }
 
+// USD per million tokens (input, output, cache read); cache writes are 1.25x input for 5m and 2x for 1h.
+const PRICES = {
+  "claude-opus-5-5": [4, 20, 0.2],
+  "claude-opus-5": [5, 25, 0.5],
+  "claude-sonnet-5-5": [2, 10, 0.1],
+  "claude-haiku-5-5": [0.1, 0.5, 0.01],
+};
+
+export function cost(u, model) {
+  const p = PRICES[model];
+  if (!p) return null;
+  const write1h = u.cache_creation?.ephemeral_1h_input_tokens || 0;
+  const write5m = (u.cache_creation_input_tokens || 0) - write1h;
+  return ((u.input_tokens || 0) * p[0] + (u.output_tokens || 0) * p[1] + (u.cache_read_input_tokens || 0) * p[2] + write5m * p[0] * 1.25 + write1h * p[0] * 2) / 1e6;
+}
+
 export function summarizeAgent(id, entries, input) {
   const tools = {};
   const read = new Set();
@@ -64,7 +80,7 @@ export function summarizeAgent(id, entries, input) {
       prev = t;
     }
     if (role === "user" && !first) first = text(content).trim();
-    if (role === "assistant" && e.message.usage) usage.set(e.message.id || e.uuid, e.message.usage);
+    if (role === "assistant" && e.message.usage) usage.set(e.message.id || e.uuid, { ...e.message.usage, model: e.message.model });
     for (const c of blocks(content)) {
       if (c.type === "tool_result" && c.is_error) failed++;
       if (role !== "assistant") continue;
@@ -92,6 +108,8 @@ export function summarizeAgent(id, entries, input) {
     tokens.cacheCreation += u.cache_creation_input_tokens || 0;
   }
   if (tokens) tokens.total = tokens.input + tokens.output + tokens.cacheRead + tokens.cacheCreation;
+  const costs = [...usage.values()].map((u) => cost(u, u.model));
+  const costUsd = costs.length && costs.every((c) => c !== null) ? costs.reduce((a, b) => a + b, 0) : null;
   return {
     id,
     description: truncate((input?.description || first || "").replace(/\s+/g, " ").trim()),
@@ -108,6 +126,7 @@ export function summarizeAgent(id, entries, input) {
     commands: [...commands],
     reportChars: report.trim().length,
     tokens,
+    costUsd,
   };
 }
 
@@ -206,6 +225,7 @@ export function analyze({ main, agents }) {
       waitMs: summaries.reduce((s, a) => s + a.waitMs, 0),
       toolCalls: summaries.reduce((s, a) => s + a.toolCalls, 0),
       tokens: known.length ? known.reduce((s, a) => s + a.tokens.total, 0) : null,
+      costUsd: summaries.some((a) => a.costUsd !== null) ? summaries.reduce((s, a) => s + (a.costUsd || 0), 0) : null,
     },
   };
 }
