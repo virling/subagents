@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { allowRule, analyze, cost, mask, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
 import fs from "node:fs";
 import path from "node:path";
+import { count } from "../src/format.js";
 import { at, result, say, tmp, use } from "./helpers.js";
 
 const usage = { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100, cache_creation_input_tokens: 1 };
@@ -191,4 +192,9 @@ test("cost strips a context suffix from the model id and ignores empty synthetic
     { ...say(1, "assistant", "hi"), message: { id: "m2", role: "assistant", model: "<synthetic>", content: [], usage: { input_tokens: 0, output_tokens: 0 } } },
   ]);
   assert.equal(a.costUsd, 20);
+});
+
+test("count switches to M before it would print 1000.0k", () => {
+  assert.equal(count(999949), "999.9k");
+  assert.equal(count(999950), "1.0M");
 });

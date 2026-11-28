@@ -10,7 +10,7 @@ export function duration(ms) {
 
 export function count(n) {
   if (n < 1000) return String(n);
-  if (n < 1e6) return `${(n / 1000).toFixed(1)}k`;
+  if (n < 999950) return `${(n / 1000).toFixed(1)}k`;
   return `${(n / 1e6).toFixed(1)}M`;
 }
 
