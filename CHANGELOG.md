@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- Haiku 5.5 prompts over 100K tokens are priced at the long-prompt rate.
+
 ## [0.3.1] - 2026-11-28
 
 ### Fixed
