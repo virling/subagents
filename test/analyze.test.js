@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { allowRule, analyze, cost, mask, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
 import fs from "node:fs";
 import path from "node:path";
-import { count } from "../src/format.js";
+import { count, formatReport } from "../src/format.js";
 import { at, result, say, tmp, use } from "./helpers.js";
 
 const usage = { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100, cache_creation_input_tokens: 1 };
@@ -184,6 +184,10 @@ test("cost uses per-model prices and charges 1h cache writes and fast mode at 2x
   assert.equal(cost({ output_tokens: 1e6, speed: "fast" }, "claude-opus-5-5"), 40);
 });
 
+test("cost charges a 5 minute only cache write on Opus at 1.25x input", () => {
+  assert.equal(cost({ cache_creation_input_tokens: 1e6, cache_creation: { ephemeral_5m_input_tokens: 1e6, ephemeral_1h_input_tokens: 0 } }, "claude-opus-5-5"), 5);
+});
+
 test("cost strips a context suffix from the model id and ignores empty synthetic usage", () => {
   assert.equal(cost({ output_tokens: 1e6 }, "claude-opus-5-5[1m]"), 20);
   assert.equal(cost({ input_tokens: 0, output_tokens: 0 }, "<synthetic>"), 0);
@@ -197,4 +201,20 @@ test("cost strips a context suffix from the model id and ignores empty synthetic
 test("count switches to M before it would print 1000.0k", () => {
   assert.equal(count(999949), "999.9k");
   assert.equal(count(999950), "1.0M");
+});
+
+test("formatReport prints cost per agent, the total at API prices and the Approvals section", () => {
+  const agent = { n: 1, id: "abc", description: "Check things", start: at(0), end: at(5), durationMs: 60000, waitMs: 120000, reportChars: 500, tokens: { total: 1500 }, costUsd: 1.234, toolCalls: 1, tools: { Bash: 1 }, failed: 0, read: [], edited: [] };
+  const out = formatReport({
+    agents: [agent],
+    flags: [],
+    approvals: { count: 1, waitMs: 120000, reasons: [{ reason: "no-rule-match", count: 1, waitMs: 120000, example: "gh run list" }], folders: [{ dir: "/elsewhere", count: 1 }], rules: [{ rule: "Bash(gh:*)", count: 1 }] },
+    totals: { subagents: 1, durationMs: 60000, toolCalls: 1, tokens: 1500, costUsd: 1.234 },
+  });
+  assert.match(out, /report 500 chars {2}tokens 1\.5k {2}~\$1\.23 {2}waited 2m 0s for approval/);
+  assert.match(out, /^Approvals\n {3}1 tool calls waited 2m 0s for you to approve them$/m);
+  assert.match(out, /no-rule-match {2}1 {2}2m 0s {2}e\.g\. gh run list/);
+  assert.match(out, /additionalDirectories or run \/add-dir\): \/elsewhere \(1\)/);
+  assert.match(out, /candidates for permissions\.allow: Bash\(gh:\*\) \(1\)/);
+  assert.match(out, /^Total: 1 subagents, 1m 0s, 1 tool calls, 1\.5k tokens, ~\$1\.23 at API prices$/m);
 });
