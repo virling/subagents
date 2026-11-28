@@ -230,7 +230,7 @@ export function analyze({ main, agents }) {
       waitMs: summaries.reduce((s, a) => s + a.waitMs, 0),
       toolCalls: summaries.reduce((s, a) => s + a.toolCalls, 0),
       tokens: known.length ? known.reduce((s, a) => s + a.tokens.total, 0) : null,
-      costUsd: summaries.some((a) => a.costUsd !== null) ? summaries.reduce((s, a) => s + (a.costUsd || 0), 0) : null,
+      costUsd: summaries.some((a) => a.costUsd !== null) && !summaries.some((a) => a.tokens && a.costUsd === null) ? summaries.reduce((s, a) => s + (a.costUsd || 0), 0) : null,
     },
   };
 }

@@ -139,6 +139,13 @@ test("analyze orders subagents by start and totals them", () => {
   assert.deepEqual(report.totals, { subagents: 2, durationMs: 3 * 60000, toolCalls: 1, tokens: 116, waitMs: 0, costUsd: null });
 });
 
+test("analyze leaves out the total cost when a subagent with tokens has no price", () => {
+  const priced = { ...say(1, "assistant", "a"), message: { id: "m1", role: "assistant", model: "claude-opus-5-5", content: [], usage: { output_tokens: 1e6 } } };
+  const unpriced = { ...say(2, "assistant", "b"), message: { id: "m2", role: "assistant", model: "some-other-model", content: [], usage: { output_tokens: 1e6 } } };
+  assert.equal(analyze({ main: [], agents: [{ id: "a", entries: [priced] }] }).totals.costUsd, 20);
+  assert.equal(analyze({ main: [], agents: [{ id: "a", entries: [priced] }, { id: "b", entries: [unpriced] }] }).totals.costUsd, null);
+});
+
 test("normalizeCommand collapses whitespace", () => {
   assert.equal(normalizeCommand("  git   status\n"), "git status");
 });
