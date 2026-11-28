@@ -73,6 +73,8 @@ test("approvalSummary groups prompts by reason and suggests folders and allow ru
   assert.deepEqual(s.rules, [{ rule: "Bash(gh:*)", count: 1 }]);
   assert.deepEqual(outsideFolders({ tool: "Read", target: "/x/y/z.md" }), ["/x/y"]);
   assert.equal(allowRule({ tool: "Bash", target: "cd /a && npm test" }), "Bash(npm:*)");
+  assert.equal(allowRule({ tool: "Bash", target: "time rm -rf build" }), null);
+  assert.equal(allowRule({ tool: "Bash", target: "cd /a && sudo ls" }), null);
 });
 
 test("text before a tool call is not the final report, and no usage means no tokens", () => {

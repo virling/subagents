@@ -187,10 +187,12 @@ export function outsideFolders(a) {
   return [...new Set(dirs)];
 }
 
+const WRAPPERS = ["sudo", "env", "time", "xargs", "nohup", "sh", "bash", "eval", "exec", "npx"];
+
 export function allowRule(a) {
   if (a.tool !== "Bash") return `${a.tool}`;
   const words = a.target.split(/&&|\|\||;|\|/).map((x) => x.trim().split(/\s+/).find((w) => !/^\w+=/.test(w))).filter((w) => w && w !== "cd");
-  return words.length ? `Bash(${words[0]}:*)` : null;
+  return words.length && !WRAPPERS.includes(words[0]) ? `Bash(${words[0]}:*)` : null;
 }
 
 const tally = (items) => [...items.reduce((m, k) => m.set(k, (m.get(k) || 0) + 1), new Map())].sort((x, y) => y[1] - x[1]).map(([key, n]) => ({ key, count: n }));
