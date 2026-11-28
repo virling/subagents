@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-28
+
 ### Added
 
 - Approvals section: tool calls that waited for you to approve them, grouped by reason, with folders to add to `permissions.additionalDirectories` and `Bash(...)` allow rule candidates. Each subagent shows how long it waited. `--json` includes `approvals` and `waitMs`.
@@ -22,6 +24,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Flags overlapping reads, repeated commands, error-heavy subagents, edit collisions and empty results.
 - Pick a session with `--session`, a file path or `--project`; `--list` shows recent sessions; `--json` output.
 
-[Unreleased]: https://github.com/virling/subagents/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/virling/subagents/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/virling/subagents/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/virling/subagents/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/virling/subagents/releases/tag/v0.1.0
