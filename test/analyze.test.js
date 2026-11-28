@@ -149,3 +149,13 @@ test("cost uses per-model prices and charges 1h cache writes at 2x", () => {
   assert.equal(cost({ cache_creation_input_tokens: 1e6 }, "claude-sonnet-5-5"), 2.5);
   assert.equal(cost(u, "some-other-model"), null);
 });
+
+test("cost strips a context suffix from the model id and ignores empty synthetic usage", () => {
+  assert.equal(cost({ output_tokens: 1e6 }, "claude-opus-5-5[1m]"), 20);
+  assert.equal(cost({ input_tokens: 0, output_tokens: 0 }, "<synthetic>"), 0);
+  const a = summarizeAgent("x", [
+    { ...say(0, "assistant", "hi"), message: { id: "m1", role: "assistant", model: "claude-opus-5-5", content: [], usage: { output_tokens: 1e6 } } },
+    { ...say(1, "assistant", "hi"), message: { id: "m2", role: "assistant", model: "<synthetic>", content: [], usage: { input_tokens: 0, output_tokens: 0 } } },
+  ]);
+  assert.equal(a.costUsd, 20);
+});

@@ -39,7 +39,8 @@ const PRICES = {
 };
 
 export function cost(u, model) {
-  const p = PRICES[model];
+  if (!(u.input_tokens || u.output_tokens || u.cache_read_input_tokens || u.cache_creation_input_tokens)) return 0;
+  const p = PRICES[model?.replace(/\[[^\]]*\]$/, "")];
   if (!p) return null;
   const write1h = u.cache_creation?.ephemeral_1h_input_tokens || 0;
   const write5m = (u.cache_creation_input_tokens || 0) - write1h;
