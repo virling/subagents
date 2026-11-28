@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- A subagent's final report delivered with SubagentHandback counts as its report, so subagents are no longer all flagged as empty, and the handback is not counted as a tool call.
+- Cost covers `[1m]` model ids, ignores empty synthetic messages, charges fast mode at 2x, and the total shows no cost when any subagent could not be priced.
+- No allow rule is suggested for wrapper commands such as `sudo`, `env` or `time`.
+- Suggested folders are checked on disk, so files and `/dev/` paths are not suggested.
+- Inline secrets (`NAME=value`, Authorization and Bearer values) are masked in commands and approval examples.
+- Unknown flags, missing flag values and a folder as the session argument exit 2 with usage.
+- Token counts switch to M at 999950.
+
 ## [0.3.0] - 2026-11-28
 
 ### Added
