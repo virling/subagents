@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { allowRule, analyze, cost, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
-import { at, result, say, use } from "./helpers.js";
+import fs from "node:fs";
+import path from "node:path";
+import { at, result, say, tmp, use } from "./helpers.js";
 
 const usage = { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100, cache_creation_input_tokens: 1 };
 
@@ -75,6 +77,15 @@ test("approvalSummary groups prompts by reason and suggests folders and allow ru
   assert.equal(allowRule({ tool: "Bash", target: "cd /a && npm test" }), "Bash(npm:*)");
   assert.equal(allowRule({ tool: "Bash", target: "time rm -rf build" }), null);
   assert.equal(allowRule({ tool: "Bash", target: "cd /a && sudo ls" }), null);
+});
+
+test("outsideFolders checks the disk for folders and skips /dev paths", () => {
+  const dir = tmp();
+  fs.mkdirSync(path.join(dir, "foo"));
+  fs.writeFileSync(path.join(dir, "README"), "");
+  assert.deepEqual(outsideFolders({ tool: "Grep", target: path.join(dir, "foo") }), [path.join(dir, "foo")]);
+  assert.deepEqual(outsideFolders({ tool: "Bash", target: `cat ${dir}/README > /dev/null` }), [dir]);
+  assert.deepEqual(outsideFolders({ tool: "Bash", target: `ls ${dir}/foo` }), [path.join(dir, "foo")]);
 });
 
 test("text before a tool call is not the final report, and no usage means no tokens", () => {

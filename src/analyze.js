@@ -167,6 +167,7 @@ export function findFlags(agents, mainReads = []) {
   return flags;
 }
 
+const isDir = (p) => fs.statSync(p, { throwIfNoEntry: false })?.isDirectory();
 const home = (p) => p.replace(/^~(?=\/|$)/, os.homedir());
 
 function repoRoot(dir) {
@@ -177,11 +178,12 @@ function repoRoot(dir) {
 export function outsideFolders(a) {
   const dirs = [];
   const cds = new Set([...a.target.matchAll(/(?:^|[;&|]\s*)cd\s+(\S+)/g)].map((m) => m[1]));
-  if (a.tool !== "Bash") return a.target.startsWith("/") ? [repoRoot(path.dirname(a.target))] : [];
+  if (a.tool !== "Bash") return a.target.startsWith("/") ? [repoRoot(isDir(a.target) ? a.target : path.dirname(a.target))] : [];
   for (const m of a.target.matchAll(/(?:^|[\s=])(~?\/[^\s;&|'"`)]+)/g)) {
     const p = home(m[1]);
+    if (p.startsWith("/dev/")) continue;
     const cd = cds.has(m[1]);
-    dirs.push(repoRoot(cd || !path.extname(p) ? p : path.dirname(p)));
+    dirs.push(repoRoot(cd || isDir(p) ? p : path.dirname(p)));
   }
   if (!dirs.length && a.cwd) dirs.push(repoRoot(a.cwd));
   return [...new Set(dirs)];
