@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Estimated cost at API prices for each subagent and in the total (`costUsd` in `--json`), from per-model prices for Opus 5.5, Opus 5, Sonnet 5.5 and Haiku 5.5, with 1-hour cache writes at 2x input and 5-minute writes at 1.25x. Subagents on other models show no cost.
+
 ## [0.2.0] - 2026-11-28
 
 ### Added
