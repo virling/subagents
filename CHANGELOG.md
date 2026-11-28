@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Approvals section: tool calls that waited for you to approve them, grouped by reason, with folders to add to `permissions.additionalDirectories` and `Bash(...)` allow rule candidates. Each subagent shows how long it waited. `--json` includes `approvals` and `waitMs`.
+
 ## [0.1.1] - 2026-11-28
 
 ### Fixed
