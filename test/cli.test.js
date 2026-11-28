@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
@@ -65,4 +65,14 @@ test("cli supports --list, --session, a file path, --json and --help", () => {
   assert.equal(json.session, "s2");
   assert.deepEqual(json.flags.map((f) => f.type), ["overlap", "empty-result"]);
   assert.match(run(config, ["--help"]), /--session <id>/);
+});
+
+test("cli rejects unknown flags and missing values with usage and exit code 2", () => {
+  const { config, project } = fixture();
+  for (const args of [["--sesion", "foo"], ["--project", project, "--session"]]) {
+    const r = spawnSync("node", [bin, ...args], { encoding: "utf8", env: { ...process.env, CLAUDE_CONFIG_DIR: config } });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /--session <id>/);
+    assert.equal(r.stdout, "");
+  }
 });

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
+import { parseArgs } from "node:util";
 import { analyze } from "../src/analyze.js";
 import { formatReport } from "../src/format.js";
 import { defaultBase, listSessions, loadSession, projectDir } from "../src/sessions.js";
@@ -17,21 +18,18 @@ const HELP = `subagents: review what Claude Code subagents did in a session
 
 Transcripts are read from $CLAUDE_CONFIG_DIR/projects or ~/.claude/projects.`;
 
-const BOOLEAN_FLAGS = ["list", "json", "help"];
-
-function parseArgs(argv) {
-  const positional = [];
-  const flags = {};
-  for (let i = 0; i < argv.length; i++) {
-    if (!argv[i].startsWith("--")) positional.push(argv[i]);
-    else if (BOOLEAN_FLAGS.includes(argv[i].slice(2))) flags[argv[i].slice(2)] = true;
-    else flags[argv[i].slice(2)] = argv[++i];
-  }
-  return { positional, flags };
-}
+const options = { session: { type: "string" }, project: { type: "string" }, list: { type: "boolean" }, json: { type: "boolean" }, help: { type: "boolean" } };
 
 function main() {
-  const { positional, flags } = parseArgs(process.argv.slice(2));
+  let args;
+  try {
+    args = parseArgs({ args: process.argv.slice(2), options, strict: true, allowPositionals: true });
+  } catch (err) {
+    console.error(`${err.message}\n\n${HELP}`);
+    process.exitCode = 2;
+    return;
+  }
+  const { positionals: positional, values: flags } = args;
   if (flags.help) return console.log(HELP);
   const dir = projectDir(defaultBase(), flags.project || process.cwd());
   const sessions = listSessions(dir);
