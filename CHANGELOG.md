@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-28
+
 ### Added
 
 - Estimated cost at API prices for each subagent and in the total (`costUsd` in `--json`), from per-model prices for Opus 5.5, Opus 5, Sonnet 5.5 and Haiku 5.5, with 1-hour cache writes at 2x input and 5-minute writes at 1.25x. Subagents on other models show no cost.
@@ -28,7 +30,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Flags overlapping reads, repeated commands, error-heavy subagents, edit collisions and empty results.
 - Pick a session with `--session`, a file path or `--project`; `--list` shows recent sessions; `--json` output.
 
-[Unreleased]: https://github.com/virling/subagents/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/virling/subagents/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/virling/subagents/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/virling/subagents/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/virling/subagents/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/virling/subagents/releases/tag/v0.1.0
