@@ -38,10 +38,13 @@ const PRICES = {
   "claude-sonnet-5-5": [2, 10, 0.1],
   "claude-haiku-5-5": [0.1, 0.5, 0.01],
 };
+const LONG_PROMPT = { "claude-haiku-5-5": [100000, [0.5, 2.5, 0.05]] };
 
 export function cost(u, model) {
   if (!(u.input_tokens || u.output_tokens || u.cache_read_input_tokens || u.cache_creation_input_tokens)) return 0;
-  const p = PRICES[model?.replace(/\[[^\]]*\]$/, "")];
+  const name = model?.replace(/\[[^\]]*\]$/, "");
+  const prompt = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+  const p = LONG_PROMPT[name] && prompt > LONG_PROMPT[name][0] ? LONG_PROMPT[name][1] : PRICES[name];
   if (!p) return null;
   const write1h = u.cache_creation?.ephemeral_1h_input_tokens || 0;
   const write5m = (u.cache_creation_input_tokens || 0) - write1h;

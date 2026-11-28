@@ -191,6 +191,8 @@ test("cost charges a 5 minute only cache write on Opus at 1.25x input", () => {
 test("cost strips a context suffix from the model id and ignores empty synthetic usage", () => {
   assert.equal(cost({ output_tokens: 1e6 }, "claude-opus-5-5[1m]"), 20);
   assert.equal(cost({ input_tokens: 0, output_tokens: 0 }, "<synthetic>"), 0);
+  assert.equal(cost({ input_tokens: 1e5, output_tokens: 1e6 }, "claude-haiku-5-5"), 0.01 + 0.5);
+  assert.equal(cost({ input_tokens: 1000, cache_read_input_tokens: 1e5, output_tokens: 1e6 }, "claude-haiku-5-5"), (1000 * 0.5 + 1e5 * 0.05 + 1e6 * 2.5) / 1e6);
   const a = summarizeAgent("x", [
     { ...say(0, "assistant", "hi"), message: { id: "m1", role: "assistant", model: "claude-opus-5-5", content: [], usage: { output_tokens: 1e6 } } },
     { ...say(1, "assistant", "hi"), message: { id: "m2", role: "assistant", model: "<synthetic>", content: [], usage: { input_tokens: 0, output_tokens: 0 } } },

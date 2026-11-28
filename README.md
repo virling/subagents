@@ -63,7 +63,7 @@ Each subagent transcript lives at `~/.claude/projects/<project>/<session>/subage
 - **Read / edited**: file paths from `Read`, and from `Edit`, `Write`, `MultiEdit` and `NotebookEdit`.
 - **Report**: characters of the message the subagent hands back with `SubagentHandback`, or else of its last text after its last tool call.
 - **Tokens**: input, output and cache tokens from `message.usage`, counted once per API message.
-- **Cost**: an estimate from those tokens at API list prices per model; the total is left out when any subagent's model has no known price.
+- **Cost**: an estimate from those tokens at API list prices per model, including Haiku 5.5's higher price for prompts over 100K tokens; the total is left out when any subagent's model has no known price.
 
 ## Flags
 
