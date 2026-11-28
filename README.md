@@ -28,33 +28,30 @@ subagents --help
 ```
 Session 3f1c9a2e-0b7d-4c55-9e61-2a8d4f6b1c07
 
-#1 a91f0c2d7e3b4a5c6  Map the billing module
-   11-26 14:02 -> 11-26 14:06  4m 12s  report 2.1k chars  tokens 412.5k
-   tools  18 (Read 11, Grep 5, Bash 2)
-   read   src/billing/invoice.js, src/billing/tax.js, src/db.js
+#1 a85240df5ea60a9fa  Draft the changelog from commits
+   11-27 16:25 -> 11-27 16:44  2m 58s  report 4.0k chars  tokens 1.2M  ~$1.02  waited 16m 41s for approval
+   tools  17 (Bash 15, Write 2)
+   edited src/draft.js, test/draft.test.js
 
-#2 b27d4e8a1c9f0b3d2  Find why invoice totals are off
-   11-26 14:02 -> 11-26 14:09  7m 40s  report 140 chars  tokens 655.0k
-   tools  26 (Bash 12, Read 9, Edit 5)  failed 9
-   read   src/billing/invoice.js, src/billing/round.js
-   edited src/billing/round.js
+#2 a8e15fc2a8fa93605  Audit the config loader
+   11-28 15:30 -> 11-28 15:33  2m 14s  report 6.6k chars  tokens 501.1k  ~$0.89  waited 29s for approval
+   tools  9 (Bash 7, Read 2)
+   read   src/config.js, src/cli.js
 
-#3 c5e0a3f9b2d7c1e84  Add tests for rounding
-   11-26 14:10 -> 11-26 14:13  3m 5s  report 820 chars  tokens 301.2k
-   tools  12 (Bash 6, Edit 4, Read 2)
-   read   src/billing/round.js
-   edited src/billing/round.js, test/round.test.js
+#3 a3cba4c459b909b40  Review the test suite
+   11-28 15:30 -> 11-28 15:47  2m 28s  report 7.7k chars  tokens 761.8k  ~$1.05  waited 13m 58s for approval
+   tools  11 (Bash 10, Skill 1)
 
 Flags
-   overlap: src/billing/invoice.js read by #1, #2
-   overlap: src/billing/round.js read by #2, #3
-   overlap: src/db.js read again by the main session after #1 finished
-   repeated-command: `npm test -- billing` run in #2, #3
-   error-heavy: #2 9/26 tool calls failed (35%)
-   edit-collision: src/billing/round.js edited by #2, #3
-   empty-result: #2 final report is 140 chars (under 200)
+   none
 
-Total: 3 subagents, 14m 57s, 56 tool calls, 1.4M tokens
+Approvals
+   24 tool calls waited 31m 7s for you to approve them
+   safetyCheck  13  16m 31s  e.g. git diff --stat && npm test 2>&1 | tail -20
+   outsideReadsBlocked  11  14m 36s  e.g. cd /work/shared-lib && git status --short && ls -R src test
+   folders outside the project (add to permissions.additionalDirectories or run /add-dir): /work/shared-lib (8), /work/docs (3)
+
+Total: 3 subagents, 7m 39s, 37 tool calls, 2.5M tokens, ~$2.97 at API prices
 ```
 
 ## What is measured
@@ -62,10 +59,11 @@ Total: 3 subagents, 14m 57s, 56 tool calls, 1.4M tokens
 Each subagent transcript lives at `~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl`. The description comes from the `Agent` (or older `Task`) tool call in the main session, or else the subagent's first message.
 
 - **Time**: active time in the subagent transcript. When a subagent is continued later with a follow-up message, the idle gap before that message is not counted. Time spent waiting for a person to approve a tool call is not counted either. A long-running tool, such as a slow Bash command, still counts.
-- **Tool calls**: every `tool_use`, grouped by tool name. **Failed** counts `tool_result` entries with `is_error`.
+- **Tool calls**: every `tool_use` except `SubagentHandback`, grouped by tool name. **Failed** counts `tool_result` entries with `is_error`.
 - **Read / edited**: file paths from `Read`, and from `Edit`, `Write`, `MultiEdit` and `NotebookEdit`.
-- **Report**: characters of the subagent's last text after its last tool call.
+- **Report**: characters of the message the subagent hands back with `SubagentHandback`, or else of its last text after its last tool call.
 - **Tokens**: input, output and cache tokens from `message.usage`, counted once per API message.
+- **Cost**: an estimate from those tokens at API list prices per model; the total is left out when any subagent's model has no known price.
 
 ## Flags
 
