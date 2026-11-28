@@ -13,6 +13,7 @@ const blocks = (content) => (Array.isArray(content) ? content : []);
 const turns = (entries) => entries.filter((e) => (e.type === "user" || e.type === "assistant") && e.message);
 const fileOf = (input) => input?.file_path || input?.notebook_path;
 export const normalizeCommand = (cmd) => cmd.trim().replace(/\s+/g, " ");
+export const mask = (cmd) => cmd.replace(/\b(Authorization:\s*(?:(?:Bearer|Basic|token)\s+)?|Bearer\s+)[^\s"'\\]+/gi, "$1***").replace(/(^|[\s;&|(])([A-Za-z_]\w*)=("[^"]*"|'[^']*'|[^\s;&|]+)/g, "$1$2=***");
 const truncate = (s, n = 80) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
 
 export function launches(main) {
@@ -76,7 +77,7 @@ export function summarizeAgent(id, entries, input) {
         waited += t - prev;
         const use = uses.get(blocks(content).find((c) => c.type === "tool_result")?.tool_use_id);
         const reasons = (e.permissionDecision.reasonCode || "prompt").split("+").map((r) => r.replace(/^(subcommands:)?(bashMiss:)?/, ""));
-        approvals.push({ tool: use?.name || "?", target: use?.input?.command || fileOf(use?.input) || use?.input?.path || "", reasons: [...new Set(reasons)], waitMs: t - prev, cwd: e.cwd });
+        approvals.push({ tool: use?.name || "?", target: mask(use?.input?.command || fileOf(use?.input) || use?.input?.path || ""), reasons: [...new Set(reasons)], waitMs: t - prev, cwd: e.cwd });
       }
       prev = t;
     }
@@ -98,7 +99,7 @@ export function summarizeAgent(id, entries, input) {
       const file = fileOf(c.input);
       if (file && c.name === "Read") read.add(file);
       if (file && EDIT_TOOLS.includes(c.name)) edited.add(file);
-      if (c.name === "Bash" && c.input?.command) commands.add(normalizeCommand(c.input.command));
+      if (c.name === "Bash" && c.input?.command) commands.add(normalizeCommand(mask(c.input.command)));
     }
   }
   times.sort();

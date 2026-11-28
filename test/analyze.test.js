@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { allowRule, analyze, cost, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
+import { allowRule, analyze, cost, mask, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
 import fs from "node:fs";
 import path from "node:path";
 import { at, result, say, tmp, use } from "./helpers.js";
@@ -157,6 +157,18 @@ test("analyze leaves out the total cost when a subagent with tokens has no price
   const unpriced = { ...say(2, "assistant", "b"), message: { id: "m2", role: "assistant", model: "some-other-model", content: [], usage: { output_tokens: 1e6 } } };
   assert.equal(analyze({ main: [], agents: [{ id: "a", entries: [priced] }] }).totals.costUsd, 20);
   assert.equal(analyze({ main: [], agents: [{ id: "a", entries: [priced] }, { id: "b", entries: [unpriced] }] }).totals.costUsd, null);
+});
+
+test("secrets in commands are masked in commands and approval targets", () => {
+  assert.equal(mask(`API_KEY=abc123 npm run deploy && export TOKEN="x y"`), "API_KEY=*** npm run deploy && export TOKEN=***");
+  assert.equal(mask(`curl -H "Authorization: Bearer sk-123" https://x`), `curl -H "Authorization: Bearer ***" https://x`);
+  assert.equal(mask("curl -H 'authorization: token ghp_1' x"), "curl -H 'authorization: token ***' x");
+  const a = summarizeAgent("x", [
+    use(0, "t1", "Bash", { command: "GH_TOKEN=secret gh pr list" }),
+    result(5, "t1", false, { permissionDecision: { decision: "accept", source: "user" } }),
+  ]);
+  assert.deepEqual(a.commands, ["GH_TOKEN=*** gh pr list"]);
+  assert.equal(a.approvals[0].target, "GH_TOKEN=*** gh pr list");
 });
 
 test("normalizeCommand collapses whitespace", () => {
