@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
 const AGENT_TOOLS = ["Agent", "Task"];
 const EDIT_TOOLS = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
 export const EMPTY_REPORT_CHARS = 200;
@@ -38,7 +42,10 @@ export function summarizeAgent(id, entries, input) {
   let first = "";
   const times = [];
   let active = 0;
+  let waited = 0;
   let prev = null;
+  const uses = new Map();
+  const approvals = [];
   for (const e of turns(entries)) {
     const { role, content } = e.message;
     if (e.timestamp) {
@@ -48,6 +55,12 @@ export function summarizeAgent(id, entries, input) {
       const prompt = role === "user" && text(content).trim() && !blocks(content).some((c) => c.type === "tool_result");
       const approved = role === "user" && e.permissionDecision?.source?.startsWith("user");
       if (prev !== null && !prompt && !approved) active += t - prev;
+      if (prev !== null && approved) {
+        waited += t - prev;
+        const use = uses.get(blocks(content).find((c) => c.type === "tool_result")?.tool_use_id);
+        const reasons = (e.permissionDecision.reasonCode || "prompt").split("+").map((r) => r.replace(/^(subcommands:)?(bashMiss:)?/, ""));
+        approvals.push({ tool: use?.name || "?", target: use?.input?.command || fileOf(use?.input) || use?.input?.path || "", reasons: [...new Set(reasons)], waitMs: t - prev, cwd: e.cwd });
+      }
       prev = t;
     }
     if (role === "user" && !first) first = text(content).trim();
@@ -57,6 +70,7 @@ export function summarizeAgent(id, entries, input) {
       if (role !== "assistant") continue;
       if (c.type === "text") report += `${c.text}\n`;
       if (c.type !== "tool_use") continue;
+      uses.set(c.id, c);
       report = "";
       calls++;
       tools[c.name] = (tools[c.name] || 0) + 1;
@@ -84,6 +98,8 @@ export function summarizeAgent(id, entries, input) {
     start,
     end,
     durationMs: active,
+    waitMs: waited,
+    approvals,
     toolCalls: calls,
     tools,
     failed,
@@ -127,6 +143,52 @@ export function findFlags(agents, mainReads = []) {
   return flags;
 }
 
+const home = (p) => p.replace(/^~(?=\/|$)/, os.homedir());
+
+function repoRoot(dir) {
+  for (let d = dir; d !== path.dirname(d); d = path.dirname(d)) if (fs.existsSync(path.join(d, ".git"))) return d;
+  return dir;
+}
+
+export function outsideFolders(a) {
+  const dirs = [];
+  const cds = new Set([...a.target.matchAll(/(?:^|[;&|]\s*)cd\s+(\S+)/g)].map((m) => m[1]));
+  if (a.tool !== "Bash") return a.target.startsWith("/") ? [repoRoot(path.dirname(a.target))] : [];
+  for (const m of a.target.matchAll(/(?:^|[\s=])(~?\/[^\s;&|'"`)]+)/g)) {
+    const p = home(m[1]);
+    const cd = cds.has(m[1]);
+    dirs.push(repoRoot(cd || !path.extname(p) ? p : path.dirname(p)));
+  }
+  if (!dirs.length && a.cwd) dirs.push(repoRoot(a.cwd));
+  return [...new Set(dirs)];
+}
+
+export function allowRule(a) {
+  if (a.tool !== "Bash") return `${a.tool}`;
+  const words = a.target.split(/&&|\|\||;|\|/).map((x) => x.trim().split(/\s+/).find((w) => !/^\w+=/.test(w))).filter((w) => w && w !== "cd");
+  return words.length ? `Bash(${words[0]}:*)` : null;
+}
+
+const tally = (items) => [...items.reduce((m, k) => m.set(k, (m.get(k) || 0) + 1), new Map())].sort((x, y) => y[1] - x[1]).map(([key, n]) => ({ key, count: n }));
+
+export function approvalSummary(agents, project) {
+  const all = agents.flatMap((a) => a.approvals);
+  const reasons = new Map();
+  for (const a of all) for (const r of a.reasons) {
+    const cur = reasons.get(r) || { reason: r, count: 0, waitMs: 0, example: a.target };
+    cur.count++;
+    cur.waitMs += a.waitMs;
+    reasons.set(r, cur);
+  }
+  return {
+    count: all.length,
+    waitMs: all.reduce((s, a) => s + a.waitMs, 0),
+    reasons: [...reasons.values()].sort((x, y) => y.count - x.count),
+    folders: tally(all.filter((a) => a.reasons.includes("outsideReadsBlocked")).flatMap(outsideFolders).filter((d) => d !== project)).map(({ key, count }) => ({ dir: key, count })),
+    rules: tally(all.filter((a) => a.reasons.includes("no-rule-match")).map(allowRule).filter(Boolean)).map(({ key, count }) => ({ rule: key, count })),
+  };
+}
+
 export function analyze({ main, agents }) {
   const { byAgent, reads } = launches(main);
   const summaries = agents
@@ -137,9 +199,11 @@ export function analyze({ main, agents }) {
   return {
     agents: summaries,
     flags: findFlags(summaries, reads),
+    approvals: approvalSummary(summaries, main.find((e) => e.cwd) && repoRoot(main.find((e) => e.cwd).cwd)),
     totals: {
       subagents: summaries.length,
       durationMs: summaries.reduce((s, a) => s + a.durationMs, 0),
+      waitMs: summaries.reduce((s, a) => s + a.waitMs, 0),
       toolCalls: summaries.reduce((s, a) => s + a.toolCalls, 0),
       tokens: known.length ? known.reduce((s, a) => s + a.tokens.total, 0) : null,
     },

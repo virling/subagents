@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { analyze, findFlags, launches, normalizeCommand, summarizeAgent } from "../src/analyze.js";
+import { allowRule, analyze, approvalSummary, findFlags, launches, normalizeCommand, outsideFolders, summarizeAgent } from "../src/analyze.js";
 import { at, result, say, use } from "./helpers.js";
 
 const usage = { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 100, cache_creation_input_tokens: 1 };
@@ -49,6 +49,30 @@ test("summarizeAgent leaves out time spent waiting for a person to approve a too
     say(41, "assistant", "Done."),
   ]);
   assert.equal(a.durationMs, 11 * 60000);
+  assert.equal(a.waitMs, 30 * 60000);
+  assert.deepEqual(a.approvals, [{ tool: "Bash", target: "ls", reasons: ["prompt"], waitMs: 30 * 60000, cwd: undefined }]);
+});
+
+test("approvalSummary groups prompts by reason and suggests folders and allow rules", () => {
+  const agent = (approvals) => ({ approvals });
+  const s = approvalSummary(
+    [
+      agent([
+        { tool: "Bash", target: "cd /elsewhere/app && sed -n 1,5p src/a.js", reasons: ["outsideReadsBlocked"], waitMs: 60000 },
+        { tool: "Bash", target: "wc -l src/b.js", reasons: ["outsideReadsBlocked"], waitMs: 60000, cwd: "/elsewhere/app" },
+        { tool: "Bash", target: "grep -n x /proj/src/a.js", reasons: ["outsideReadsBlocked"], waitMs: 1000 },
+      ]),
+      agent([{ tool: "Bash", target: "TOKEN=1 gh run list | head", reasons: ["no-rule-match", "safetyCheck"], waitMs: 5000 }]),
+    ],
+    "/proj/src"
+  );
+  assert.equal(s.count, 4);
+  assert.equal(s.waitMs, 126000);
+  assert.deepEqual(s.reasons.map((r) => [r.reason, r.count]), [["outsideReadsBlocked", 3], ["no-rule-match", 1], ["safetyCheck", 1]]);
+  assert.deepEqual(s.folders, [{ dir: "/elsewhere/app", count: 2 }]);
+  assert.deepEqual(s.rules, [{ rule: "Bash(gh:*)", count: 1 }]);
+  assert.deepEqual(outsideFolders({ tool: "Read", target: "/x/y/z.md" }), ["/x/y"]);
+  assert.equal(allowRule({ tool: "Bash", target: "cd /a && npm test" }), "Bash(npm:*)");
 });
 
 test("text before a tool call is not the final report, and no usage means no tokens", () => {
@@ -104,7 +128,7 @@ test("analyze orders subagents by start and totals them", () => {
     ],
   });
   assert.deepEqual(report.agents.map((a) => [a.n, a.id, a.description]), [[1, "early", "First task"], [2, "late", "Second"]]);
-  assert.deepEqual(report.totals, { subagents: 2, durationMs: 3 * 60000, toolCalls: 1, tokens: 116 });
+  assert.deepEqual(report.totals, { subagents: 2, durationMs: 3 * 60000, toolCalls: 1, tokens: 116, waitMs: 0 });
 });
 
 test("normalizeCommand collapses whitespace", () => {

@@ -13,6 +13,8 @@ export function count(n) {
   return `${(n / 1e6).toFixed(1)}M`;
 }
 
+const truncate = (s, n = 70) => (s.length > n ? `${s.slice(0, n - 3)}...` : s);
+
 const time = (iso) => (iso ? new Date(iso).toLocaleString("sv").slice(5, 16) : "?");
 
 export function formatReport(report, cwd = "") {
@@ -24,7 +26,7 @@ export function formatReport(report, cwd = "") {
       .map(([name, n]) => `${name} ${n}`)
       .join(", ");
     lines.push(`#${a.n} ${a.id}  ${a.description || "(no description)"}`);
-    lines.push(`   ${time(a.start)} -> ${time(a.end)}  ${duration(a.durationMs)}  report ${count(a.reportChars)} chars${a.tokens ? `  tokens ${count(a.tokens.total)}` : ""}`);
+    lines.push(`   ${time(a.start)} -> ${time(a.end)}  ${duration(a.durationMs)}  report ${count(a.reportChars)} chars${a.tokens ? `  tokens ${count(a.tokens.total)}` : ""}${a.waitMs ? `  waited ${duration(a.waitMs)} for approval` : ""}`);
     lines.push(`   tools  ${a.toolCalls}${tools ? ` (${tools})` : ""}${a.failed ? `  failed ${a.failed}` : ""}`);
     if (a.read.length) lines.push(`   read   ${a.read.map(rel).join(", ")}`);
     if (a.edited.length) lines.push(`   edited ${a.edited.map(rel).join(", ")}`);
@@ -33,6 +35,14 @@ export function formatReport(report, cwd = "") {
   lines.push("Flags");
   if (!report.flags.length) lines.push("   none");
   for (const f of report.flags) lines.push(`   ${f.type}: ${f.file ? f.text.replace(f.file, rel(f.file)) : f.text}`);
+  const ap = report.approvals;
+  if (ap?.count) {
+    lines.push("", "Approvals");
+    lines.push(`   ${ap.count} tool calls waited ${duration(ap.waitMs)} for you to approve them`);
+    for (const r of ap.reasons) lines.push(`   ${r.reason}  ${r.count}  ${duration(r.waitMs)}  e.g. ${truncate(r.example.replace(/\s+/g, " "))}`);
+    if (ap.folders.length) lines.push(`   folders outside the project (add to permissions.additionalDirectories or run /add-dir): ${ap.folders.slice(0, 5).map((f) => `${f.dir} (${f.count})`).join(", ")}`);
+    if (ap.rules.length) lines.push(`   no allow rule matched, candidates for permissions.allow: ${ap.rules.slice(0, 5).map((r) => `${r.rule} (${r.count})`).join(", ")}`);
+  }
   const t = report.totals;
   lines.push("");
   lines.push(

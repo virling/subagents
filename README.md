@@ -75,6 +75,13 @@ Each subagent transcript lives at `~/.claude/projects/<project>/<session>/subage
 - **edit-collision**: the same file edited by 2+ subagents.
 - **empty-result**: the final report is under 200 characters.
 
+## Approvals
+
+Tool calls that waited for you to approve a permission prompt, and how long they waited in total, grouped by the reason Claude Code recorded: `outsideReadsBlocked` (the call read outside the project's folders), `safetyCheck`, `no-rule-match` and others.
+
+- **Folders outside the project**: the folders behind `outsideReadsBlocked` prompts. Add them to `permissions.additionalDirectories` in settings, or with `/add-dir`, to stop those prompts.
+- **Allow rule candidates**: `Bash(<command>:*)` rules for `no-rule-match` prompts. Check that each one is safe before adding it to `permissions.allow`.
+
 Flags are hints, not verdicts: two subagents reading the same file is often fine.
 
 ## More tools from Virling
